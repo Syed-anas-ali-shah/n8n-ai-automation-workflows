@@ -1,0 +1,307 @@
+{
+  "name": "URL Scraper → AI Extract → Google Sheet",
+  "nodes": [
+    {
+      "id": "663c04aa-f2b3-484c-95b2-3dbd130c6c10",
+      "name": "Enter URL",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        112
+      ],
+      "parameters": {
+        "formTitle": "Scrape & Extract",
+        "formDescription": "Enter a page URL. The page will be scraped, key fields extracted by AI, and saved to Google Sheets.",
+        "formFields": {
+          "values": [
+            {
+              "fieldName": "url",
+              "fieldLabel": "Page URL",
+              "fieldType": "text",
+              "placeholder": "https://example.com/article",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "webhookId": "24c6a850-c862-4084-abc7-9f737b26e5a6"
+    },
+    {
+      "id": "0ae5f211-3c6d-4139-a361-5accab41ed80",
+      "name": "Scrape Page",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        224,
+        112
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text",
+              "outputPropertyName": "data"
+            }
+          },
+          "timeout": 30000
+        }
+      }
+    },
+    {
+      "id": "e4543db2-19be-475d-af85-4f8f4e9c16c2",
+      "name": "Extract Fields",
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        448,
+        112
+      ],
+      "parameters": {
+        "text": "={{ $json.data }}",
+        "schemaType": "fromAttributes",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "title",
+              "type": "string",
+              "description": "The main title or headline of the page",
+              "required": false
+            },
+            {
+              "name": "summary",
+              "type": "string",
+              "description": "A concise 1-3 sentence summary of the page content",
+              "required": false
+            },
+            {
+              "name": "author",
+              "type": "string",
+              "description": "The author or byline, if present",
+              "required": false
+            },
+            {
+              "name": "published_date",
+              "type": "string",
+              "description": "The publication date in ISO format if available",
+              "required": false
+            },
+            {
+              "name": "category",
+              "type": "string",
+              "description": "The topic or category of the content",
+              "required": false
+            },
+            {
+              "name": "key_points",
+              "type": "string",
+              "description": "The most important points, as a single semicolon-separated string",
+              "required": false
+            }
+          ]
+        },
+        "options": {
+          "systemPromptTemplate": "You are an expert extraction algorithm. Extract the requested attributes from the provided web page text (which may include HTML). Only extract information that is actually present; leave a field empty if it is not found."
+        }
+      }
+    },
+    {
+      "id": "c6466280-6ab4-4ad7-9bd3-e907470c462c",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        528,
+        336
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini",
+          "cachedResultName": "gpt-5-mini"
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "dkGoxbxF29DB4eEH",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "id": "2a2279fe-d29d-4439-bb8d-0e8e0da103e1",
+      "name": "Save to Google Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        800,
+        112
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "",
+          "cachedResultName": "Select the target spreadsheet"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Sheet1",
+          "cachedResultName": "Sheet1"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "source_url": "={{ $('Enter URL').item.json.url }}",
+            "title": "={{ $json.output.title }}",
+            "summary": "={{ $json.output.summary }}",
+            "author": "={{ $json.output.author }}",
+            "published_date": "={{ $json.output.published_date }}",
+            "category": "={{ $json.output.category }}",
+            "key_points": "={{ $json.output.key_points }}",
+            "scraped_at": "={{ $now.toISO() }}"
+          },
+          "schema": [
+            {
+              "id": "source_url",
+              "displayName": "source_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "author",
+              "displayName": "author",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "published_date",
+              "displayName": "published_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "key_points",
+              "displayName": "key_points",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "scraped_at",
+              "displayName": "scraped_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "am21Y07B6njDp5yA",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Enter URL": {
+      "main": [
+        [
+          {
+            "node": "Scrape Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrape Page": {
+      "main": [
+        [
+          {
+            "node": "Extract Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Fields": {
+      "main": [
+        [
+          {
+            "node": "Save to Google Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Extract Fields",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {},
+  "staticData": null,
+  "pinData": {},
+  "triggerCount": 0,
+  "meta": null
+}

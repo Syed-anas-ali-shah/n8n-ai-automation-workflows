@@ -1,0 +1,60 @@
+{
+  "name": "QS101 N8n Quickstart",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "457522f3-7167-463e-ac4b-12b5b64b2fb5",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "resource": "all",
+        "limit": 10,
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.hackerNews",
+      "typeVersion": 1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "eefb2bab-d9a3-4a16-8198-aa6ea7cdd355",
+      "name": "Hacker News",
+      "notesInFlow": true,
+      "notes": "Get the latest articles"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Hacker News",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "ba85b44e-7788-4e21-b5b4-82cd031a2694",
+  "meta": {
+    "instanceId": "7d9161e7add6cba68c8275f719c667feb484cd876aab18218171a5b016e059fe"
+  },
+  "nodeGroups": [],
+  "id": "HWg9vdozpNQwJtDN",
+  "tags": []
+}

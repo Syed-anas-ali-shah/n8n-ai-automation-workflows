@@ -1,0 +1,437 @@
+{
+  "name": "Stock Analyzer",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "initialMessages": "Hi there! 👋\nMy name is Waqar Zaka. How can I assist you today?",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        64,
+        -208
+      ],
+      "id": "f13a12c8-9d31-44cd-a790-6f37f075afd3",
+      "name": "When chat message received",
+      "webhookId": "2db33978-70f2-4dca-98a0-f0c124133de7"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=You are an advanced stock intelligence assistant designed to provide comprehensive, multi-dimensional analysis of publicly traded companies.\n\nYour primary goal is to synthesize quantitative data, technical chart insights, and live sentiment/news to help users understand the current state of a stock — clearly, confidently, and with professional depth.\n\n==============================\n🔧 TOOLS YOU HAVE ACCESS TO:\n==============================\n1. Stock Tool:\n   - Retrieves: financial metrics (e.g. P/E, EPS, market cap, volume), basic chart info, and price trends.\n2. Technical Analysis Tool:\n   - Returns advanced technical breakdowns (e.g. MACD, RSI, divergence patterns, crossover events, momentum shifts).\n3. Tavily Search Tool:\n   - Provides recent news, sentiment trends, analyst outlooks, and investor narratives using custom search queries.\n   \n==============================\n📥 INPUTS YOU MAY RECEIVE:\n==============================\n1. **User Request**: e.g., \"What’s going on with Tesla stock?\"\n2. **Optional Technical Analysis**: A detailed, chart-derived text summary including indicators like MACD, RSI, divergences, crossovers, histogram, volume patterns, etc.\n\n==============================\n📊 YOUR ANALYSIS PROCESS:\n==============================\n\n**Step 1: Ticker Identification**\n- Identify the official ticker symbol from the user's request.\n- If the company name is ambiguous (e.g., “Delta”), ask for clarification.\n- Proceed only when the correct ticker is confirmed.\n\n**Step 2: Fetch Financial Metrics & Base Chart (Stock Tool)**\n- Use the ticker to retrieve:\n  - Price, volume, market cap\n  - Valuation metrics (P/E, PEG, P/B)\n  - EPS (TTM), Dividend Yield\n  - 52-week high/low, beta, and recent % change\n- Include a visual price chart link if available from the Stock Tool.\n\n**Step 3: Pull Sentiment & Narrative Context (Tavily Search)**\n- Generate a smart query using:  \n  \"[Company Name] ([TICKER]) stock sentiment, recent news, earnings analysis, analyst outlook, investor sentiment, and product developments\"\n- Focus on insights from the past 2–4 weeks.\n- Identify tone of coverage (bullish, bearish, neutral), any critical events (e.g., lawsuits, product launches, CEO changes), and analyst ratings.\n\n**Step 4: Technical Analysis Integration**\n- If a detailed chart analysis is provided, use it as your primary technical anchor. Cover:\n  - MACD position, crossovers, histogram changes, signal line behavior\n  - RSI trends, overbought/oversold zones\n  - Divergences (price vs. indicator)\n  - Breakout patterns, trendlines, support/resistance\n  - Volume confirmation\n- If no analysis is provided, generate a technical overview using available chart data (e.g., general trend, moving average positions, momentum shifts).\n\n**Step 5: Synthesize & Deliver Final Analysis**\n- Integrate insights across all three areas:\n  1. Financial metrics → Are valuations stretched? Profitable? Undervalued?\n  2. Technicals → Is the momentum strengthening or fading? Reversal signals?\n  3. Sentiment → What is the current narrative, and does it align with the chart?\n\ncurrent time is {{ $now }} \n\ndisplay the chart img using the URL in the chat.\nWHen asked to analyze a stock, always send the request in a ticker format. So if user asks to analyze Apple, query field must be AAPL. If asked to analyze tesla, use TSLA. \n\n- Deliver your output in a 3-section format.\n\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        304,
+        -208
+      ],
+      "id": "6766e223-dc02-4bf9-b0a5-ea0d00e796d5",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        64,
+        16
+      ],
+      "id": "1b14fd4a-5351-4986-970a-c2198b2a10d2",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "1ItulUmUaAdyYkDO",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        224,
+        80
+      ],
+      "id": "26c09e0e-a465-400b-9ff1-35b9e9bf8026",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Call this tool to conduct sentiment & fundamental analysis",
+        "method": "POST",
+        "url": "https://api.tavily.com/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer  "
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters0_Value', ``, 'string') }}"
+            },
+            {
+              "name": "search_depth",
+              "value": "advanced"
+            },
+            {
+              "name": "days",
+              "value": "7"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        688,
+        16
+      ],
+      "id": "c240f6dc-f343-4668-80b9-8f547118fc88",
+      "name": "Tavily Tool"
+    },
+    {
+      "parameters": {
+        "description": "Call this tool to conduct technical analysis",
+        "workflowId": {
+          "__rl": true,
+          "value": "egOB1Dl7380Ame79",
+          "mode": "list",
+          "cachedResultName": "Technical Analysis Tool"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        512,
+        48
+      ],
+      "id": "571f1f94-bb10-4132-b300-99cb9befb2f5",
+      "name": "Technical Analysis"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b59a9dc6-39bb-4bde-8ba5-97312bd7e101",
+              "name": "ticker",
+              "value": "={{ $json.query }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        32,
+        336
+      ],
+      "id": "394d4ebe-b033-4e0e-93a0-9d91afb6d71d",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.chart-img.com/v2/tradingview/advanced-chart/storage",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "rLaknoi9sOQpAeBAOS1O2bFfIPx4uuZ5B6cD0Rxj "
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"theme\": \"dark\",\n  \"interval\": \"1W\",\n  \"symbol\": \"NASDAQ:{{ $json.ticker }}\",\n  \"override\": {\n    \"showStudyLastValue\": false\n  },\n  \"studies\": [\n    {\n      \"name\": \"Volume\",\n      \"forceOverlay\": true\n    },\n    {\n      \"name\": \"MACD\",\n      \"override\": {\n        \"Signal.linewidth\": 2,\n        \"Signal.color\": \"rgb(255,65,129)\"\n      }\n    }\n  ]\n}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        336
+      ],
+      "id": "f5002146-2c7f-484a-9214-c53ae60fb9ba",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        464,
+        336
+      ],
+      "id": "3537b015-6f12-480c-89da-fee38dade120",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert technical analysis assistant focused on interpreting the MACD (Moving Average Convergence Divergence) indicator in depth.\n\nYour role:\n- Analyze MACD data thoroughly, including:\n  - Crossovers (MACD line vs Signal line)\n  - Histogram direction and strength\n  - Divergence from price action\n  - MACD relative to the zero line\n  - Historical context and recent trends\n- Interpret signals in the context of market momentum, strength of trend, and possible reversal zones.\n- Offer clear, useful recommendations based on the MACD signal, such as:\n  - Consider watching for confirmation\n  - Momentum is weakening, exercise caution\n  - Potential opportunity if aligned with broader setup\n  - Avoid acting until signal confirms or improves\n\nOutput expectations:\n- Go beyond surface-level crossover detection.\n- Include deeper insights like:\n  - “The bullish crossover is happening below the zero line, which typically signals a weak rally attempt.”\n  - “MACD histogram has shown three consecutive lower highs despite price rising — a bearish divergence forming.”\n  - “Momentum is accelerating upward and the MACD has crossed above the zero line — often a confirmation of bullish trend continuation.”\n- Mention historical behavior if relevant (e.g., “The last time MACD diverged this way during an uptrend, a sharp reversal followed.”)\n- Always add a recommendation or consideration — what a trader should think about or look for next, while staying neutral and non-financial.\n\nTone:\n- Professional, confident, and data-driven.\n- Avoid disclaimers like “not financial advice” — simply be informative and strategic in your language.\n- Use phrases like:\n  - “This may indicate...”\n  - “Traders often interpret this as...”\n  - “It would be wise to monitor...”\n  - “This setup could suggest...”\n\nIf MACD data is missing, malformed, or incomplete, respond with:\n“MACD data is unavailable or incomplete. Please provide valid chart data.”\n\nImportant: Your analysis must be based solely on MACD and its historical behavior, not on speculative forecasting. Stay within your role as a MACD-based technical analyst.\n",
+        "messages": {
+          "messageValues": [
+            {
+              "type": "HumanMessagePromptTemplate",
+              "messageType": "imageBinary"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        688,
+        336
+      ],
+      "id": "0e601733-130d-4a2a-8dd5-bd14c4154cab",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2bfc5d3d-4dfb-482c-863e-f2e2aa684647",
+              "name": "response",
+              "value": "={{ $json.text }}\n\n{{ $('HTTP Request1').item.json.url }}\n",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1056,
+        336
+      ],
+      "id": "4e7ce856-33a8-4b11-9d60-059ae0d468c7",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -192,
+        336
+      ],
+      "id": "12bfc8d0-8c5f-4fc2-8f3c-474507b70c11",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        688,
+        496
+      ],
+      "id": "8735dd22-5389-4643-b4a3-26a0a7a8f0f1",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "1ItulUmUaAdyYkDO",
+          "name": "OpenAi account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "query": "TSLA"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tavily Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Technical Analysis": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1c209b40-a7cd-4fef-bcb2-4161b441e1b8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "16ba6003d2d5a45c56b92c96f7576aed293b88be5c552dfa666cf5cebfa67b5e"
+  },
+  "id": "l8viwjP74X2TFqZS",
+  "tags": []
+}
