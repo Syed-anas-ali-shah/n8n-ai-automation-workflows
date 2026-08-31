@@ -78,7 +78,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer  "
+              "value": "Bearer "
             }
           ]
         },
